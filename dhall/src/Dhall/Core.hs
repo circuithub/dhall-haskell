@@ -346,6 +346,9 @@ instance Pretty Var where
     pretty = Pretty.unAnnotate . prettyVar
 
 -- | Syntax tree for expressions
+
+-- NB: If you add a constructor, please also update the Arbitrary instance in
+-- Dhall.Test.QuickCheck.
 data Expr s a
     -- | > Const c                                  ~  c
     = Const Const
