@@ -387,20 +387,24 @@ typeWithA tpa = loop
                             Left (TypeError ctx x err) )
                 return (App List t)
             _ -> Left (TypeError ctx e MissingListType)
-    loop ctx e@(ListLit (Just t ) xs) = do
-        s <- fmap Dhall.Core.normalize (loop ctx t)
-        case s of
-            Const Type -> return ()
-            _ -> Left (TypeError ctx e (InvalidListType t))
+    loop ctx e@(ListLit (Just t0 ) xs) = do
+        let nf_t0 = Dhall.Core.normalize t0
+        t1 <- case nf_t0 of
+            App List t1 -> do
+                s <- fmap Dhall.Core.normalize (loop ctx t1)
+                case s of
+                    Const Type -> return t1
+                    _ -> Left (TypeError ctx e (InvalidListType t1))
+            _ -> Left (TypeError ctx e (InvalidListType t0)) -- TODO
         flip traverseWithIndex_ xs (\i x -> do
             t' <- loop ctx x
-            if Dhall.Core.judgmentallyEqual t t'
+            if Dhall.Core.judgmentallyEqual t1 t'
                 then return ()
                 else do
-                    let nf_t  = Dhall.Core.normalize t
+                    let nf_t  = Dhall.Core.normalize t1
                     let nf_t' = Dhall.Core.normalize t'
                     Left (TypeError ctx x (InvalidListElement i nf_t x nf_t')) )
-        return (App List t)
+        return (App List t1)
     loop ctx e@(ListAppend l r  ) = do
         tl <- fmap Dhall.Core.normalize (loop ctx l)
         el <- case tl of

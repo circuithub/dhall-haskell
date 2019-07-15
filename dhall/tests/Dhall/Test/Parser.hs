@@ -9,6 +9,8 @@ import Prelude hiding (FilePath)
 import Test.Tasty (TestTree)
 import Turtle (FilePath, (</>))
 
+import qualified Codec.CBOR.Read      as CBOR
+import qualified Codec.CBOR.Term      as CBOR
 import qualified Codec.Serialise      as Serialise
 import qualified Control.Monad        as Monad
 import qualified Data.ByteString.Lazy as ByteString.Lazy
@@ -120,8 +122,15 @@ shouldParse path = do
 
         let bytes = Serialise.serialise term
 
-        let message = "The expected CBOR representation doesn't match the actual one"
-        Tasty.HUnit.assertEqual message encoded bytes
+        Monad.unless (encoded == bytes) $ do
+            expected <- Core.throws (fmap snd (CBOR.deserialiseFromBytes CBOR.decodeTerm encoded))
+
+            let message = "The expected CBOR representation doesn't match the actual one\n"
+                          ++ "expected: " ++ show expected ++ "\n but got: " ++ show term
+                          ++ "\n expr: " ++ show expression
+
+            Tasty.HUnit.assertFailure message
+
 
 shouldNotParse :: Text -> TestTree
 shouldNotParse path = do

@@ -179,18 +179,15 @@ parsers embedded = Parsers {..}
             let alternative4B = do
                     _colon
 
-                    b <- expression
+                    b <- fmap shallowDenote expression
 
-                    case (shallowDenote a, shallowDenote b) of
-                        (ListLit _ xs, App f c) ->
-                            case shallowDenote f of
-                                List -> case xs of
-                                    [] -> return (ListLit (Just c) xs)
-                                    _  -> return (Annot a b)
-                                _ ->
-                                    return (Annot a b)
-                        (Merge c d _, e) ->
-                            return (Merge c d (Just e))
+                    case shallowDenote a of
+                        ListLit _ [] ->
+                            return (ListLit (Just b) [])
+                        ListLit _ _ ->
+                            return (Annot a b)
+                        Merge c d _ ->
+                            return (Merge c d (Just b))
                         _ -> return (Annot a b)
 
             alternative4A <|> alternative4B <|> pure a
