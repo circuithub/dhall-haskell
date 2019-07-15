@@ -179,7 +179,7 @@ parsers embedded = Parsers {..}
             let alternative4B = do
                     _colon
 
-                    b <- fmap shallowDenote expression
+                    b <- expression
 
                     case shallowDenote a of
                         ListLit _ [] ->
