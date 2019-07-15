@@ -61,6 +61,7 @@ instance Eq DeserialiseFailureWithEq where
 
 instance (Arbitrary a, Ord a) => Arbitrary (Set a) where
   arbitrary = Dhall.Set.fromList <$> arbitrary
+  shrink = map Dhall.Set.fromList . shrink . Dhall.Set.toList
 
 lift0 :: a -> Gen a
 lift0 = pure
