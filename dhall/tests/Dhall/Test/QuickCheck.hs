@@ -36,15 +36,18 @@ import Test.QuickCheck.Instances ()
 import Test.Tasty (TestTree)
 import Text.Megaparsec (SourcePos(..), Pos)
 
+import qualified Control.Exception
 import qualified Codec.Serialise
 import qualified Data.Coerce
 import qualified Data.List
 import qualified Dhall.Map
 import qualified Data.Sequence
 import qualified Dhall.Binary
+import qualified Dhall.Core
 import qualified Dhall.Diff
 import qualified Dhall.Set
 import qualified Dhall.TypeCheck
+import qualified System.IO.Unsafe
 import qualified Test.QuickCheck
 import qualified Test.Tasty.QuickCheck
 import qualified Text.Megaparsec       as Megaparsec
@@ -348,10 +351,17 @@ binaryRoundtrip expression =
         -> Either DeserialiseFailureWithEq a
     wrap = Data.Coerce.coerce
 
--- isNormalizedIsConsistentWithNormalize :: Expr () Import -> Property
--- isNormalizedIsConsistentWithNormalize expression =
---         Dhall.Core.isNormalized expression
---     === (Dhall.Core.normalize expression == expression)
+isNormalizedIsConsistentWithNormalize :: Expr () Import -> Property
+isNormalizedIsConsistentWithNormalize expression =
+        Dhall.Core.isNormalized expression
+    === (errorToMaybe (Dhall.Core.normalize expression) == Just expression)
+  where
+    {-# NOINLINE errorToMaybe #-}
+    errorToMaybe :: a -> Maybe a
+    errorToMaybe x = System.IO.Unsafe.unsafePerformIO $
+        Control.Exception.catch
+            (Just <$> Control.Exception.evaluate x)
+            (\(Control.Exception.ErrorCall _) -> pure Nothing)
 
 isSameAsSelf :: Expr () Import -> Property
 isSameAsSelf expression =
@@ -368,10 +378,10 @@ tests =
         [ ( "Binary serialization should round-trip"
           , Test.QuickCheck.property binaryRoundtrip
           )
-        -- , ( "isNormalized should be consistent with normalize"
-        --   , Test.QuickCheck.property
-        --       (Test.QuickCheck.withMaxSuccess 10000 isNormalizedIsConsistentWithNormalize)
-        --   )
+        , ( "isNormalized should be consistent with normalize"
+          , Test.QuickCheck.property
+              (Test.QuickCheck.withMaxSuccess 10000 isNormalizedIsConsistentWithNormalize)
+          )
         , ( "An expression should have no difference with itself"
           , Test.QuickCheck.property
               (Test.QuickCheck.withMaxSuccess 10000 isSameAsSelf)
