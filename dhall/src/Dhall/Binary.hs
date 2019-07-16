@@ -288,7 +288,7 @@ instance ToTerm a => ToTerm (Expr s a) where
         (label, _T₁) = case fmap Dhall.Core.denote _T₀ of
             Nothing           -> (4 , TNull)
             Just (App List t) -> (4 , encode t)
-            Just t            -> (27, encode t)
+            Just t            -> (28, encode t)
 
         xs₁ = map encode (Data.Foldable.toList xs₀)
     encode (Some t₀) =
@@ -414,6 +414,15 @@ instance ToTerm a => ToTerm (Expr s a) where
         b₁ = encode b₀
     encode (Annot t₀ _T₀) =
         TList [ TInt 26, t₁, _T₁ ]
+      where
+        t₁  = encode t₀
+        _T₁ = encode _T₀
+    encode (ToMap t₀ Nothing) =
+        TList [ TInt 27, t₁ ]
+      where
+        t₁ = encode t₀
+    encode (ToMap t₀ (Just _T₀)) =
+        TList [ TInt 27, t₁, _T₁ ]
       where
         t₁  = encode t₀
         _T₁ = encode _T₀
@@ -766,7 +775,14 @@ instance FromTerm a => FromTerm (Expr s a) where
         t₀  <- decode t₁
         _T₀ <- decode _T₁
         return (Annot t₀ _T₀)
-    decode (TList [ TInt 27, _T₁ ]) = do
+    decode (TList [ TInt 27, t₁ ]) = do
+        t₀ <- decode t₁
+        return (ToMap t₀ Nothing)
+    decode (TList [ TInt 27, t₁, _T₁ ]) = do
+        t₀ <- decode t₁
+        _T₀ <- decode _T₁
+        return (ToMap t₀ (Just _T₀))
+    decode (TList [ TInt 28, _T₁ ]) = do
         _T₀ <- decode _T₁
         return (ListLit (Just _T₀) empty)
     decode _ =

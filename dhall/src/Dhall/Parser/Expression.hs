@@ -184,10 +184,10 @@ parsers embedded = Parsers {..}
                     case shallowDenote a of
                         ListLit _ [] ->
                             return (ListLit (Just b) [])
-                        ListLit _ _ ->
-                            return (Annot a b)
                         Merge c d _ ->
                             return (Merge c d (Just b))
+                        ToMap c _ ->
+                            return (ToMap c (Just b))
                         _ -> return (Annot a b)
 
             alternative4A <|> alternative4B <|> pure a
@@ -283,6 +283,7 @@ parsers embedded = Parsers {..}
                     , alternative05
                     , alternative06
                     , alternative07
+                    , alternative08
                     , alternative37
                     , alternative09
 
@@ -328,6 +329,11 @@ parsers embedded = Parsers {..}
                 a <- importExpression_
                 b <- importExpression_ <?> "second argument to ❰merge❱"
                 return (Merge a b Nothing)
+
+            alternative08 = do
+                _toMap
+                a <- importExpression_
+                return (ToMap a Nothing)
 
             alternative09 = do
                 a <- try doubleInfinity
