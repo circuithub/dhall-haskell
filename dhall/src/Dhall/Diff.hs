@@ -572,8 +572,6 @@ skeleton (ListLit {}) =
     <>  " "
     <>  colon
     <>  " "
-    <>  builtin "List" -- TODO?
-    <>  " "
     <>  ignore
 skeleton (ListAppend {}) =
         ignore
