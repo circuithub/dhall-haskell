@@ -530,8 +530,8 @@ eval !env t =
                             | otherwise -> error errorMsg
                           (x, y, ma) -> VMerge x y ma
     ToMap x ma       -> case (evalE x, evalE <$> ma) of
-                          (VRecordLit m, Just (VList t)) | null m ->
-                            VListLit (Just t) (Data.Sequence.empty)
+                          (VRecordLit m, ma'@(Just _)) | null m ->
+                            VListLit ma' (Data.Sequence.empty)
                           (VRecordLit m, _) -> let
                             entry (k, v) =
                               VRecordLit (Dhall.Map.fromList [("mapKey", VTextLit $ VChunks [] k),

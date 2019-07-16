@@ -1679,8 +1679,8 @@ normalizeWithM ctx e0 = loop (denote e0)
                 let keyValues = Data.Sequence.fromList (map entry (Dhall.Map.toList kvsX))
 
                 let listType = case t' of
-                        Just (App List itemType) | null keyValues ->
-                            Just itemType
+                        Just _ | null keyValues ->
+                            t'
                         _ ->
                             Nothing
 
