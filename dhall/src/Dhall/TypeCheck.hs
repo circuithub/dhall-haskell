@@ -375,7 +375,7 @@ typeWithA tpa = loop
                 s <- fmap Dhall.Core.normalize (loop ctx t)
                 case s of
                     Const Type -> return ()
-                    _ -> Left (TypeError ctx e (InvalidListType t))
+                    _ -> Left (TypeError ctx e (InvalidListType (App List t)))
                 flip traverseWithIndex_ xs' (\i x -> do
                     t' <- loop ctx x
                     if Dhall.Core.judgmentallyEqual t t'
@@ -387,15 +387,15 @@ typeWithA tpa = loop
                             Left (TypeError ctx x err) )
                 return (App List t)
             _ -> Left (TypeError ctx e MissingListType)
-    loop ctx e@(ListLit (Just t0 ) xs) = do
+    loop ctx e@(ListLit (Just t0) xs) = do
         let nf_t0 = Dhall.Core.normalize t0
         t1 <- case nf_t0 of
             App List t1 -> do
                 s <- fmap Dhall.Core.normalize (loop ctx t1)
                 case s of
                     Const Type -> return t1
-                    _ -> Left (TypeError ctx e (InvalidListType t1))
-            _ -> Left (TypeError ctx e (InvalidListType t0)) -- TODO
+                    _ -> Left (TypeError ctx e (InvalidListType nf_t0))
+            _ -> Left (TypeError ctx e (InvalidListType nf_t0))
         flip traverseWithIndex_ xs (\i x -> do
             t' <- loop ctx x
             if Dhall.Core.judgmentallyEqual t1 t'
@@ -1841,11 +1841,11 @@ prettyTypeMessage (IfBranchMismatch expr0 expr1 expr2 expr3) =
 
 prettyTypeMessage (InvalidListType expr0) = ErrorMessages {..}
   where
-    short = "Invalid type for ❰List❱ elements"
+    short = "Invalid type for ❰List❱"
 
     long =
-        "Explanation: ❰List❱s can optionally document the type of their elements with a  \n\
-        \type annotation, like this:                                                     \n\
+        "Explanation: ❰List❱s can optionally document their type with a type annotation, \n\
+        \like this:                                                                      \n\
         \                                                                                \n\
         \                                                                                \n\
         \    ┌──────────────────────────┐                                                \n\
@@ -1859,8 +1859,19 @@ prettyTypeMessage (InvalidListType expr0) = ErrorMessages {..}
         \    ┌───────────────────┐                                                       \n\
         \    │ [] : List Natural │  An empty ❰List❱                                      \n\
         \    └───────────────────┘                                                       \n\
-        \                ⇧                                                               \n\
-        \                You must specify the type when the ❰List❱ is empty              \n\
+        \           ⇧                                                                    \n\
+        \           You must specify the type when the ❰List❱ is empty                   \n\
+        \                                                                                \n\
+        \                                                                                \n\
+        \The type must be of the form ❰List ...❱ and not something else.  For example,   \n\
+        \the following type annotation is " <> _NOT <> " valid:                          \n\
+        \                                                                                \n\
+        \                                                                                \n\
+        \    ┌────────────┐                                                              \n\
+        \    │ ... : Bool │                                                              \n\
+        \    └────────────┘                                                              \n\
+        \            ⇧                                                                   \n\
+        \            This type does not have the form ❰List ...❱                         \n\
         \                                                                                \n\
         \                                                                                \n\
         \The element type must be a type and not something else.  For example, the       \n\
@@ -1881,11 +1892,11 @@ prettyTypeMessage (InvalidListType expr0) = ErrorMessages {..}
         \                 This is a ❰Kind❱ and not a ❰Type❱                              \n\
         \                                                                                \n\
         \                                                                                \n\
-        \You declared that the ❰List❱'s elements should have type:                       \n\
+        \You declared that the ❰List❱ should have type:                                  \n\
         \                                                                                \n\
         \" <> txt0 <> "\n\
         \                                                                                \n\
-        \... which is not a ❰Type❱                                                       \n"
+        \... which is not a valid list type                                              \n"
       where
         txt0 = insert expr0
 
