@@ -249,14 +249,17 @@ lineComment = do
             void (Text.Parser.Char.char '\n'  )
         <|> void (Text.Parser.Char.text "\r\n")
 
-documentation :: Parser Text
+documentation :: Parser [Text]
 documentation = do
-    _ <- Text.Parser.Char.text "||| "
-
-    let predicate c = ('\x20' <= c && c <= '\x10FFFF') || c == '\t'
-
-    Dhall.Parser.Combinators.takeWhile predicate <* endOfLine
+    many documentationLine
   where
+    documentationLine = do
+        _ <- Text.Parser.Char.text "|||"
+
+        let predicate c = ('\x20' <= c && c <= '\x10FFFF') || c == '\t'
+
+        Dhall.Parser.Combinators.takeWhile predicate <* endOfLine
+
     endOfLine =
             void (Text.Parser.Char.char '\n'  )
         <|> void (Text.Parser.Char.text "\r\n")

@@ -79,9 +79,12 @@ noted parser = do
 
 
 documented :: Parser (Expr src a) -> Parser (Expr src a)
-documented parser =
-    Documented <$> documentation <* whitespace <*> parser
-
+documented parser = do
+    docLines <- documentation
+    a <- parser
+    case docLines of
+        [] -> return a
+        _ -> return (Documented (Data.Text.unlines docLines) a)
 
 completeExpression :: Parser a -> Parser (Expr Src a)
 completeExpression embedded = documented completeExpression_

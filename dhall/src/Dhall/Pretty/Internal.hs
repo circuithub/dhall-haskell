@@ -355,7 +355,12 @@ prettyCharacterSet characterSet expression =
     Pretty.group (prettyExpression expression)
   where
     prettyExpression (Documented t e) =
-      Pretty.align ("||| " <> Pretty.pretty t <> Pretty.hardline <> prettyExpression e)
+      Pretty.align
+        (  foldMap
+             (\l -> "|||" <> Pretty.pretty l <> Pretty.hardline)
+             (Text.lines t)
+        <> prettyExpression e
+        )
     prettyExpression a0@(Lam _ _ _) =
         arrows characterSet (fmap duplicate (docs a0))
       where
