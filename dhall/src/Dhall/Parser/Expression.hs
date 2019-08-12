@@ -77,8 +77,14 @@ noted parser = do
         Note src₁ _ | laxSrcEq src₀ src₁ -> return e
         _                                -> return (Note src₀ e)
 
+
+documented :: Parser (Expr src a) -> Parser (Expr src a)
+documented parser =
+    Documented <$> documentation <* whitespace <*> parser
+
+
 completeExpression :: Parser a -> Parser (Expr Src a)
-completeExpression embedded = completeExpression_
+completeExpression embedded = documented completeExpression_
   where
     Parsers {..} = parsers embedded
 

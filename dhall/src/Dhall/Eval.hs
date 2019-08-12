@@ -597,6 +597,7 @@ eval !env t =
     Assert t         -> VAssert (evalE t)
     Equivalent t u   -> VEquivalent (evalE t) (evalE u)
     Note _ e         -> evalE e
+    Documented _ e   -> evalE e
     ImportAlt t _    -> evalE t
     Embed a          -> VEmbed a
 

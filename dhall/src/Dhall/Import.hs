@@ -967,6 +967,7 @@ loadWith expr₀ = case expr₀ of
   Project a b          -> Project <$> loadWith a <*> mapM loadWith b
   Assert a             -> Assert <$> loadWith a
   Equivalent a b       -> Equivalent <$> loadWith a <*> loadWith b
+  Documented t e       -> Documented t <$> loadWith e
   Note a b             -> do
       let handler e = throwM (SourcedException a (e :: MissingImports))
 

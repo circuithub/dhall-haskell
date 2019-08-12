@@ -354,6 +354,8 @@ prettyCharacterSet :: Pretty a => CharacterSet -> Expr s a -> Doc Ann
 prettyCharacterSet characterSet expression =
     Pretty.group (prettyExpression expression)
   where
+    prettyExpression (Documented t e) =
+      Pretty.align ("||| " <> Pretty.pretty t <> Pretty.hardline <> prettyExpression e)
     prettyExpression a0@(Lam _ _ _) =
         arrows characterSet (fmap duplicate (docs a0))
       where

@@ -494,6 +494,9 @@ data Expr s a
     -- | > Note s x                                 ~  e
     | Note s (Expr s a)
     -- | > ImportAlt                                ~  e1 ? e2
+    | Documented Text (Expr s a)
+    -- | > --- Documented
+    -- > e
     | ImportAlt (Expr s a) (Expr s a)
     -- | > Embed import                             ~  import
     | Embed a
@@ -572,6 +575,7 @@ instance Functor (Expr s) where
   fmap f (Project e1 vs) = Project (fmap f e1) (fmap (fmap f) vs)
   fmap f (Assert t) = Assert (fmap f t)
   fmap f (Equivalent e1 e2) = Equivalent (fmap f e1) (fmap f e2)
+  fmap f (Documented t e) = Documented t (fmap f e)
   fmap f (Note s e1) = Note s (fmap f e1)
   fmap f (ImportAlt e1 e2) = ImportAlt (fmap f e1) (fmap f e2)
   fmap f (Embed a) = Embed (f a)
@@ -651,6 +655,7 @@ instance Monad (Expr s) where
     Project a b          >>= k = Project (a >>= k) (fmap (>>= k) b)
     Assert a             >>= k = Assert (a >>= k)
     Equivalent a b       >>= k = Equivalent (a >>= k) (b >>= k)
+    Documented t e    >>= k = Documented t (e >>= k)
     Note a b             >>= k = Note a (b >>= k)
     ImportAlt a b        >>= k = ImportAlt (a >>= k) (b >>= k)
     Embed a              >>= k = k a
@@ -720,6 +725,7 @@ instance Bifunctor Expr where
     first k (Assert a            ) = Assert (first k a)
     first k (Equivalent a b      ) = Equivalent (first k a) (first k b)
     first k (Project a b         ) = Project (first k a) (fmap (first k) b)
+    first k (Documented t e   ) = Documented t (first k e)
     first k (Note a b            ) = Note (k a) (first k b)
     first k (ImportAlt a b       ) = ImportAlt (first k a) (first k b)
     first _ (Embed a             ) = Embed a
@@ -1008,6 +1014,9 @@ shift d v (Project a b) = Project a' b'
   where
     a' =       shift d v  a
     b' = fmap (shift d v) b
+shift d v (Documented t e) = Documented t e'
+  where
+    e' = shift d v e
 shift d v (Note a b) = Note a b'
   where
     b' = shift d v b
@@ -1191,6 +1200,9 @@ subst x e (Equivalent a b) = Equivalent a' b'
   where
     a' = subst x e a
     b' = subst x e b
+subst x e (Documented t b) = Documented t b'
+  where
+    b' = subst x e b
 subst x e (Note a b) = Note a b'
   where
     b' = subst x e b
@@ -1324,6 +1336,7 @@ denote (Assert a            ) = Assert (denote a)
 denote (Equivalent a b      ) = Equivalent (denote a) (denote b)
 denote (ImportAlt a b       ) = ImportAlt (denote a) (denote b)
 denote (Embed a             ) = Embed a
+denote (Documented t e      ) = Documented t (denote e)
 
 shallowDenote :: Expr s a -> Expr s a
 shallowDenote (Note _ e) = shallowDenote e
@@ -1800,6 +1813,7 @@ normalizeWithM ctx e0 = loop (denote e0)
 
         pure (Equivalent l' r')
     Note _ e' -> loop e'
+    Documented _ e' -> loop e'
     ImportAlt l _r -> loop l
     Embed a -> pure (Embed a)
 
@@ -2039,6 +2053,7 @@ isNormalized e0 = loop (denote e0)
       Assert t -> loop t
       Equivalent l r -> loop l && loop r
       Note _ e' -> loop e'
+      Documented _ e' -> loop e'
       ImportAlt l _r -> loop l
       Embed _ -> True
 
@@ -2207,6 +2222,7 @@ subExpressions f (Field a b) = Field <$> f a <*> pure b
 subExpressions f (Project a b) = Project <$> f a <*> traverse f b
 subExpressions f (Assert a) = Assert <$> f a
 subExpressions f (Equivalent a b) = Equivalent <$> f a <*> f b
+subExpressions f (Documented t e) = Documented t <$> f e
 subExpressions f (Note a b) = Note a <$> f b
 subExpressions f (ImportAlt l r) = ImportAlt <$> f l <*> f r
 subExpressions _ (Embed a) = pure (Embed a)

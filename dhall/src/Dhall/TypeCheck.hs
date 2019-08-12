@@ -866,6 +866,7 @@ typeWithA tpa = loop
         Left (TypeError ctx' (Note s' e'') m) -> Left (TypeError ctx' (Note s' e'') m)
         Left (TypeError ctx'          e''  m) -> Left (TypeError ctx' (Note s  e'') m)
         Right r                               -> Right r
+    loop ctx   (Documented _ e  ) = loop ctx e
     loop ctx   (ImportAlt l _r  ) =
        fmap Dhall.Core.normalize (loop ctx l)
     loop _     (Embed p         ) = Right $ tpa p

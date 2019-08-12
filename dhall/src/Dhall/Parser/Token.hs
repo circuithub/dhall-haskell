@@ -5,6 +5,7 @@
 module Dhall.Parser.Token (
     validCodepoint,
     whitespace,
+    documentation,
     bashEnvironmentVariable,
     posixEnvironmentVariable,
     ComponentType(..),
@@ -243,6 +244,18 @@ lineComment = do
     endOfLine
 
     return ()
+  where
+    endOfLine =
+            void (Text.Parser.Char.char '\n'  )
+        <|> void (Text.Parser.Char.text "\r\n")
+
+documentation :: Parser Text
+documentation = do
+    _ <- Text.Parser.Char.text "||| "
+
+    let predicate c = ('\x20' <= c && c <= '\x10FFFF') || c == '\t'
+
+    Dhall.Parser.Combinators.takeWhile predicate <* endOfLine
   where
     endOfLine =
             void (Text.Parser.Char.char '\n'  )

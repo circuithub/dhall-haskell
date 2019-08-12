@@ -20,6 +20,7 @@ module Dhall.Main
     , main
     ) where
 
+import Data.Bifunctor ( first )
 import Control.Applicative (optional, (<|>))
 import Control.Exception (SomeException)
 import Data.List.NonEmpty (NonEmpty(..))
@@ -99,6 +100,7 @@ data Mode
     | Encode { file :: Maybe FilePath, json :: Bool }
     | Decode { file :: Maybe FilePath, json :: Bool }
     | Text { file :: Maybe FilePath }
+    | Doc { file :: Maybe FilePath }
 
 data ResolveMode
     = Dot
@@ -188,6 +190,10 @@ parseMode =
             "text"
             "Render a Dhall expression that evaluates to a Text literal"
             (Text <$> optional parseFile)
+    <|> subcommand
+            "doc"
+            "Show documentation for a Dhall expression"
+            (Doc <$> optional parseFile)
     <|> (Default <$> optional parseFile <*> parseAnnotate <*> parseAlpha)
   where
     argument =
@@ -579,6 +585,16 @@ command (Options {..}) = do
                         invalidTypeExpression = normalizedExpression
 
                     Control.Exception.throwIO (Dhall.InvalidType {..})
+
+        Doc {..} -> do
+            expression <- getExpression file
+
+            case Dhall.Core.denote expression of
+                Dhall.Core.Documented t _ ->
+                    Data.Text.IO.putStrLn t
+
+                e ->
+                    fail ( show ( first ( const () ) e ) )
 
 -- | Entry point for the @dhall@ executable
 main :: IO ()
